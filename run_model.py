@@ -2,6 +2,7 @@ import gradio as gr
 from lavis.models import load_model_and_preprocess
 import torch
 import argparse
+import time
 
 
 def launch_gradio():
@@ -16,6 +17,7 @@ def launch_gradio():
             "prompt": prompt,
         }
 
+        curr_time = time.time()
         output = model.generate(
             samples,
             length_penalty=float(len_penalty),
@@ -26,6 +28,7 @@ def launch_gradio():
             top_p=top_p,
             use_nucleus_sampling=use_nucleus_sampling,
         )
+        print(f"Time taken: {time.time() - curr_time:.2f}s")
 
         return output[0]
 
@@ -116,26 +119,7 @@ def launch_gradio():
     ).launch(share=True, server_port=7861)
 
 
-from fastapi import FastAPI
-from multiprocessing import Process
-import uvicorn
-
-app = FastAPI()
-
-
-@app.get('/')
-def read_root():
-    return {"message": "Hello, FastAPI"}
-
-
-def run_fastapi():
-    uvicorn.run(app, host="0.0.0.0", port=7860)
-
-
 if __name__ == '__main__':
-    # start FastAPI in a separate process
-    Process(target=run_fastapi).start()
-
     parser = argparse.ArgumentParser(description="Demo")
     parser.add_argument("--model-name", default="blip2_vicuna_instruct")
     parser.add_argument("--model-type", default="vicuna7b")
