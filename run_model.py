@@ -119,6 +119,9 @@ def launch_gradio():
 from fastapi import FastAPI
 from multiprocessing import Process
 import uvicorn
+
+app = FastAPI()
+
 @app.get('/')
 def read_root():
     return {"message": "Hello, FastAPI"}
