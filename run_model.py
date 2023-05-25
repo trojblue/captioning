@@ -4,32 +4,31 @@ import torch
 import argparse
 
 
-def inference(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, decoding_method,
-              modeltype):
-    use_nucleus_sampling = decoding_method == "Nucleus sampling"
-    print(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, use_nucleus_sampling)
-    image = vis_processors["eval"](image).unsqueeze(0).to(device)
-
-    samples = {
-        "image": image,
-        "prompt": prompt,
-    }
-
-    output = model.generate(
-        samples,
-        length_penalty=float(len_penalty),
-        repetition_penalty=float(repetition_penalty),
-        num_beams=beam_size,
-        max_length=max_len,
-        min_length=min_len,
-        top_p=top_p,
-        use_nucleus_sampling=use_nucleus_sampling,
-    )
-
-    return output[0]
-
-
 def launch_gradio():
+    def inference(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, decoding_method,
+                  modeltype):
+        use_nucleus_sampling = decoding_method == "Nucleus sampling"
+        print(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, use_nucleus_sampling)
+        image = vis_processors["eval"](image).unsqueeze(0).to(device)
+
+        samples = {
+            "image": image,
+            "prompt": prompt,
+        }
+
+        output = model.generate(
+            samples,
+            length_penalty=float(len_penalty),
+            repetition_penalty=float(repetition_penalty),
+            num_beams=beam_size,
+            max_length=max_len,
+            min_length=min_len,
+            top_p=top_p,
+            use_nucleus_sampling=use_nucleus_sampling,
+        )
+
+        return output[0]
+
     image_input = gr.Image(type="pil")
 
     min_len = gr.Slider(
@@ -93,7 +92,6 @@ def launch_gradio():
         label="Repetition Penalty",
     )
 
-
     prompt_textbox = gr.Textbox(label="Prompt:", placeholder="prompt", lines=2)
 
     device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
@@ -111,10 +109,12 @@ def launch_gradio():
 
     gr.Interface(
         fn=inference,
-        inputs=[image_input, prompt_textbox, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, sampling],
+        inputs=[image_input, prompt_textbox, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p,
+                sampling],
         outputs="text",
         allow_flagging="never",
     ).launch(share=True, server_port=7861)
+
 
 from fastapi import FastAPI
 from multiprocessing import Process
@@ -122,9 +122,11 @@ import uvicorn
 
 app = FastAPI()
 
+
 @app.get('/')
 def read_root():
     return {"message": "Hello, FastAPI"}
+
 
 def run_fastapi():
     uvicorn.run(app, host="0.0.0.0", port=7860)
@@ -139,5 +141,3 @@ if __name__ == '__main__':
     parser.add_argument("--model-type", default="vicuna7b")
     args = parser.parse_args()
     launch_gradio()
-
-
