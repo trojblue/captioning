@@ -83,8 +83,9 @@ class GradioAPI:
 
 def main():
     folder_path = r"D:\Andrew\Pictures\==Train\benchmark"
-    text = "Can you tell me about this image in the most detailed and accurate way possible? In the form of general appearance, details, and then the image style, in a descriptive tone."
-    gradio = GradioAPI(text=text)
+    text = "Question: what's in the image? answer:"
+    URL = "https://fce0094b811d61e4be.gradio.live/run/predict"
+    gradio = GradioAPI(text=text, url=URL)
     gradio.process_images_in_folder(folder_path)
 
 
