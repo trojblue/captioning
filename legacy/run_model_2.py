@@ -2,21 +2,51 @@ import gradio as gr
 from lavis.models import load_model_and_preprocess
 import torch
 import argparse
+import time
 
+# =================
+parser = argparse.ArgumentParser(description="Demo")
+parser.add_argument("--model-name", default="blip2_vicuna_instruct")
+parser.add_argument("--model-type", default="vicuna7b")
+args = parser.parse_args()
+device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+
+
+print('Loading model...')
+start_time = time.time()
+
+model, vis_processors, _ = load_model_and_preprocess(
+    name=args.model_name,
+    model_type=args.model_type,
+    is_eval=True,
+    device=device,
+)
+end_time = time.time()
+print('Loading model done! Time cost: ', end_time - start_time, 's')
+
+
+# ==================
 
 def launch_gradio():
-    def inference(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, decoding_method,
+    def inference(image, prompts, num_captions, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p,
+                  decoding_method,
                   modeltype):
         use_nucleus_sampling = decoding_method == "Nucleus sampling"
-        print(image, prompt, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, use_nucleus_sampling)
+        print("model type: ", modeltype)
+
+        # Ensure prompts are a list of strings
+        prompts = prompts.split('\n')
+        assert len(prompts) == 4, "The number of prompts must be equal to 4."
+
         image = vis_processors["eval"](image).unsqueeze(0).to(device)
+        images = image.repeat(len(prompts), 1, 1, 1)
 
         samples = {
-            "image": image,
-            "prompt": prompt,
+            "image": images,
+            "prompt": prompts,
         }
 
-        output = model.generate(
+        outputs = model.generate(
             samples,
             length_penalty=float(len_penalty),
             repetition_penalty=float(repetition_penalty),
@@ -25,11 +55,22 @@ def launch_gradio():
             min_length=min_len,
             top_p=top_p,
             use_nucleus_sampling=use_nucleus_sampling,
+            num_captions=num_captions
         )
 
-        return output[0]
+        # Now outputs is a list of generated texts for each prompt
+        return '\n'.join(outputs)
 
     image_input = gr.Image(type="pil")
+
+    num_captions = gr.Slider(
+        minimum=1,
+        maximum=50,
+        value=1,
+        step=1,
+        interactive=True,
+        label="num_captions",
+    )
 
     min_len = gr.Slider(
         minimum=1,
@@ -92,24 +133,12 @@ def launch_gradio():
         label="Repetition Penalty",
     )
 
-    prompt_textbox = gr.Textbox(label="Prompt:", placeholder="prompt", lines=2)
-
-    device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
-
-    print('Loading model...')
-
-    model, vis_processors, _ = load_model_and_preprocess(
-        name=args.model_name,
-        model_type=args.model_type,
-        is_eval=True,
-        device=device,
-    )
-
-    print('Loading model done!')
+    prompt_textbox = gr.Textbox(label="Prompt:", placeholder="prompt", lines=4)
 
     gr.Interface(
         fn=inference,
-        inputs=[image_input, prompt_textbox, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p,
+        inputs=[image_input, prompt_textbox, num_captions, min_len, max_len, beam_size, len_penalty, repetition_penalty,
+                top_p,
                 sampling],
         outputs="text",
         allow_flagging="never",
@@ -135,9 +164,4 @@ def run_fastapi():
 if __name__ == '__main__':
     # start FastAPI in a separate process
     Process(target=run_fastapi).start()
-
-    parser = argparse.ArgumentParser(description="Demo")
-    parser.add_argument("--model-name", default="blip2_vicuna_instruct")
-    parser.add_argument("--model-type", default="vicuna7b")
-    args = parser.parse_args()
     launch_gradio()
