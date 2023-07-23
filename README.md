@@ -3,6 +3,21 @@ caption playground
 
 
 
+## Submodules:
+
+
+```bash
+git submodule add <repository_url> repositories/<repository_name>
+cd repositories/<repository_name>
+git checkout <commit_sha>
+
+cd ../..
+git commit -am "Add <repository_name> submodule at <commit_sha>"
+
+```
+
+
+
 ## InstructBlip:
 
 https://github.com/salesforce/LAVIS/tree/main/projects/instructblip
