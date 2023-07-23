@@ -125,3 +125,4 @@ if __name__ == '__main__':
     parser.add_argument("--model-type", default="vicuna7b")
     args = parser.parse_args()
     launch_gradio()
+

@@ -11,7 +11,6 @@ parser.add_argument("--model-type", default="vicuna7b")
 args = parser.parse_args()
 device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
 
-
 print('Loading model...')
 start_time = time.time()
 
@@ -25,10 +24,9 @@ end_time = time.time()
 print('Loading model done! Time cost: ', end_time - start_time, 's')
 
 
-
+# ==================
 
 def launch_gradio():
-
     def inference(image, prompts, num_captions):
         min_len = 15
         max_len = 95
@@ -39,7 +37,6 @@ def launch_gradio():
         decoding_method = "Beam search"
 
         use_nucleus_sampling = decoding_method == "Nucleus sampling"
-
 
         # Ensure prompts are a list of strings
         prompts = prompts.split('\n')
@@ -70,6 +67,7 @@ def launch_gradio():
 
     image_input = gr.Image(type="pil")
 
+    prompt_textbox = gr.Textbox(label="Prompt:", placeholder="prompt", lines=4)
 
     num_captions = gr.Slider(
         minimum=1,
@@ -80,18 +78,15 @@ def launch_gradio():
         label="num_captions",
     )
 
-
     gr.Interface(
         fn=inference,
         inputs=[image_input, prompt_textbox, num_captions],
-
         outputs="text",
         allow_flagging="never",
     ).launch(share=True, server_port=7861)
 
 
 from fastapi import FastAPI
-
 app = FastAPI()
 
 
